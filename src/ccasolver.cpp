@@ -6,7 +6,7 @@
 using namespace std;
 
 CcaSolver::CcaSolver()
-  : myFormula(), myAssignment(), confChanged(), myVars(0)
+  : myFormula(), myAssignment(), myVariables(), ccdVars(), myVars(0)
 { }
 
 int CcaSolver::vars() const
@@ -58,15 +58,22 @@ void CcaSolver::readFromFile(ifstream &file)
 
 void CcaSolver::init()
 {
-  myAssignment.resize(vars());
+  myVariables.resize(vars());
   for(int i = 0; i < vars(); ++i) {
-    myAssignment[i] = bool(rand() % 2);
+    myVariables[i]->value = i;
+    myVariables[i]->assigned = bool(rand() % 2);
+    myAssignment[i] = myVariables[i]->assigned;
+    myVariables[i]->score = 0;
+    myVariables[i]->confChanged = true;
+    myVariables[i]->recorded = false;
   }
 
-  confChanged.resize(vars());
-  for(int i = 0; i < vars(); ++i) {
-    confChanged[i] = true;
-  }
+  initNeighbours();
+}
+
+void CcaSolver::initNeighbours()
+{
+  
 }
 
 void CcaSolver::run()
@@ -89,7 +96,8 @@ int CcaSolver::pickVar()
 
 void CcaSolver::flipVar(int var)
 {
-  myAssignment[var] = !myAssignment[var];
+  myVariables[var]->assigned = !myVariables[var]->assigned;
+  myAssignment[var].flip();
 }
 
 void CcaSolver::printAssignment() const

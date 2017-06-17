@@ -3,7 +3,7 @@
 #include <cstdlib>
 using namespace std;
 
-Clause::Clause(int size)
+Clause::Clause(int size) : myWeight(0)
 {
   p = vector<bool>(size, false);
   n = vector<bool>(size, false);
@@ -46,4 +46,14 @@ bool Clause::get(int var) const
   else{
     return n[var-1];
   }
+}
+
+void Clause::setWeight(int weight)
+{
+  myWeight = weight;
+}
+
+int Clause::getWeight() const
+{
+  return myWeight;
 }
