@@ -1,9 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include <signal.h>
-using namespace std;
 
-bool cca(ifstream &file);
+#include "ccasolver.h"
+
+using namespace std;
 
 void sigintHandler(int param)
 {
@@ -26,18 +27,8 @@ int main(int argc, char *argv[])
     return 0;
   }
   
-  bool res = cca(file);
-  if(res){
-    cout << "SATISFIABLE" << endl;
-  }
-  else{
-    cout << "UNSATISFIABLE" << endl;
-  }
-}
-
-bool cca(ifstream &file)
-{
+  CcaSolver solver;
+  solver.readFromFile(file);
   file.close();
-  
-  return false;
+  solver.run();
 }
