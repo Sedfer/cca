@@ -198,5 +198,5 @@ void CcaSolver::printAssignment() const
         }
     }
 
-    cout << endl;
+    cout << endl << "SATISFIABLE" << endl;
 }
