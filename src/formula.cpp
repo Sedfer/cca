@@ -27,28 +27,35 @@ Clause* Formula::operator[](int index) const
   return myVector[index];
 }
 
+vector<Clause *>::const_iterator Formula::begin() const
+{
+  return myVector.cbegin();
+}
+
+vector<Clause *>::const_iterator Formula::end() const
+{
+  return myVector.cend();
+}
+
+int Formula::findAverageWeight()
+{
+	int clauses = 0;
+	int averageWeight = 0;
+	for(Clause* c: myVector){
+		++clauses;
+		averageWeight += c->getWeight();
+	}
+	averageWeight /= clauses;
+	return averageWeight;
+}
 // TODO: optimize for 3-SAT
 bool Formula::check(const Assignment &assignment) const
 {
-  for(auto c : myVector) {
-    for(int i = 0; i < c->size(); ++i) {
-      bool sat = false;
-      for(int j = 0; j < assignment.size(); ++j) {
-        int var = i;
-	if(!assignment[j]) {
-	  var *= -1;
+    for(Clause* c : myVector) {
+	    if(!c->isSatisfiable(assignment)){
+		  return false;
+		}
 	}
-
-	if(c->get(var)) {
-	  sat = true;
-	  break;
-	}
-      }
-
-      if(!sat)
-	return false;
-    }
-  }
-
-  return true;
+	return true; 
 }
+

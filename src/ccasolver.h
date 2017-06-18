@@ -12,15 +12,22 @@ class CcaSolver
   Formula myFormula;
   Assignment myAssignment;
   std::vector<Variable *> myVariables;
-  std::vector<Variable *> ccdVars;
+  std::set<Variable *> ccdVars;
+  std::set<Variable *> sdVars;
 
   int myVars;
+  int myClauses;
+  int flips;
+  
+  int maxSteps = 200;
   
   void init();
   void initNeighbours();
 
-  int pickVar();
-  void flipVar(int var);
+  Variable& pickVar();
+  void flipVar(Variable& var);
+  void updateScores();
+  void updateSets();
   
   void printAssignment() const;
   

@@ -14,9 +14,12 @@ class Formula
   ~Formula();
 
   void add(Clause *c);
+  int findAverageWeight();
   
   int size() const;
   Clause* operator[](int index) const;
+  std::vector<Clause *>::const_iterator begin() const;
+  std::vector<Clause *>::const_iterator end() const;
 
   bool check(const Assignment &assignment) const;
 };

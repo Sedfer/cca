@@ -9,6 +9,7 @@ class Assignment
 
  public:
   Assignment();
+  Assignment(const Assignment& _assignment);
   Assignment(int size);
 
   void resize(int newSize);
