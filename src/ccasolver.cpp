@@ -6,7 +6,7 @@
 using namespace std;
 
 CcaSolver::CcaSolver()
-    : myFormula(), myAssignment(), myVariables(), ccdVars(), sdVars(), myVars(0), myClauses(0), flips(0)
+    : myFormula(), ccdVars(), sdVars(), myVars(0), myClauses(0)
 { }
 
 int CcaSolver::vars() const
@@ -60,52 +60,30 @@ void CcaSolver::readFromFile(ifstream &file)
 void CcaSolver::init()
 {
     srand(time(0));
-    myVariables.resize(vars());
-    myAssignment.resize(vars());
-    for(int i = 0; i < vars(); ++i) {
-        myVariables[i] = new Variable();
-        myVariables[i]->value = i;
-        myVariables[i]->assigned = bool(rand() % 2);
-        myAssignment[i] = myVariables[i]->assigned;
-        myVariables[i]->score = 0;
-        myVariables[i]->confChanged = true;
-        myVariables[i]->recorded = false;
-    }
-    for(Clause* c: myFormula)
-    {
-        c->setWeight(1);
-    }
-    updateScores();
-    updateSets();
-    initNeighbours();
-}
 
-void CcaSolver::initNeighbours()
-{
-    for(Clause* c : myFormula){
-        auto v = c->getVariables();
-        for(int i = 0; i < v.size(); i++){
-            for(int j = 0; j < v.size(); j++){
-                if(i != j)
-                    myVariables[v[i]]->neighbours.insert(myVariables[v[j]]);
-            }
-        }
-    }
+    myFormula.init(vars());
+
+    updateSets();
 }
 
 void CcaSolver::run()
 {
     while(true) {
-        if(myFormula.check(myAssignment)) {
+        if(myFormula.check()) {
             printAssignment();
             return;
         }
 
         Variable& var = pickVar();
         flipVar(var);
+
+        // TODO: replace with lastFlip
+        for(auto var : myFormula.getVariables()) {
+            ++var->age;
+        }
     }
 }
-//TODO: resolve ties to older variable
+
 //parametric functions??
 Variable& CcaSolver::pickVar()
 {
@@ -115,40 +93,41 @@ Variable& CcaSolver::pickVar()
     if(!ccdVars.empty()){
         result = *(ccdVars.begin());
         for(Variable* v: ccdVars){
-            if(v->score > result->score)
+            if(v->score > result->score) {
                 result = v;
+            }
+            if(v->score == result->score && v->age > result->age) {
+                result = v;
+            }
         }
 
     }
     else if(!sdVars.empty()){
         result = *(sdVars.begin());
         for(Variable* v: sdVars){
-            if(v->score > result->score)
+            if(v->score > result->score) {
                 result = v;
+            }
+            if(v->score == result->score && v->age > result->age) {
+                result = v;
+            }
         }
 
     }
     //diversification
     else{
-        for(Clause* c:myFormula){
-            if(!c->isSatisfiable(myAssignment))
-                c->setWeight(c->getWeight() + 1);
-        }
-        int averageWeight = myFormula.findAverageWeight();
-        if(averageWeight > 300){
-            for(Clause* c:myFormula){
-                c->setWeight(c->getWeight() * 0.3 + (1 - 0.3) * averageWeight);
-            }
-        }
+        myFormula.updateWeights();
+
+        // get random unsat clause
         int amount = 0;
         for(Clause* c:myFormula){
-            if (!c->isSatisfiable(myAssignment))
+            if (!c->isSatisfiable())
                 amount++;
         }
         amount = random() % amount;
         Clause* myClause;
         for(Clause* c:myFormula){
-            if (!c->isSatisfiable(myAssignment)){
+            if (!c->isSatisfiable()){
                 if(amount == 0){
                     myClause = c;
                     break;
@@ -156,57 +135,31 @@ Variable& CcaSolver::pickVar()
                 amount--;
             }
         }
+
         auto v = myClause->getVariables();
-        int min = flips;
+        int maxAge = -1;
         for(int i = 0; i < v.size(); i++)
         {
-            if(myVariables[i]->flip < min){
-                min = myVariables[i]->flip;
-                result = myVariables[i];
+            if(myFormula.getVariables()[i]->age > maxAge){
+                maxAge = myFormula.getVariables()[i]->age;
+                result = myFormula.getVariables()[i];
             }
         }
-        updateScores();
+
         updateSets();
     }
+
     return *result;
 }
 
 void CcaSolver::flipVar(Variable& var)
 {
-    var.confChanged = false;
-    for(Variable* v : var.neighbours)
-    {
-        v->confChanged = true;
-    }
+    myFormula.flipVar(var.value);
 
-    var.assigned = !var.assigned;
-    myAssignment[abs(var.value)].flip();
-    flips++;
-    var.flip = flips;
-
-    updateScores();
     updateSets();
 }
 
-void CcaSolver::updateScores()
-{
-    for(Variable* v: myVariables){
-        int cost = 0;
-        int reverseCost = 0;
-        for(Clause* c : myFormula){
-            if(!c->isSatisfiable(myAssignment))
-                cost += c->getWeight();
-        }
-        myAssignment[v->value].flip();
-        for(Clause* c : myFormula){
-            if(!c->isSatisfiable(myAssignment))
-                reverseCost += c->getWeight();
-        }
-        myAssignment[v->value].flip();
-        v->score = cost - reverseCost;
-    }
-}
-
+// TODO: check if creating sdVars makes any difference
 void CcaSolver::updateSets()
 {
     int averageWeight = myFormula.findAverageWeight();
@@ -221,7 +174,7 @@ void CcaSolver::updateSets()
             sdVars.erase(v);
     }
 
-    for(Variable* v: myVariables){
+    for(Variable* v: myFormula.getVariables()){
         if ((v->score > 0) && (v->confChanged)){
             if(!v->recorded){
                 ccdVars.insert(v);
@@ -237,8 +190,8 @@ void CcaSolver::updateSets()
 
 void CcaSolver::printAssignment() const
 {
-    for(int i = 0; i < myAssignment.size(); ++i) {
-        if(myAssignment[i]) {
+    for(int i = 0; i < myFormula.getAssignment().size(); ++i) {
+        if(myFormula.getAssignment()[i]) {
             cout << i + 1 << " ";
         } else {
             cout << -(i + 1) << " ";

@@ -4,10 +4,8 @@
 #include <iostream>
 using namespace std;
 
-Clause::Clause() : vars(), myWeight(0)
-{
-
-}
+Clause::Clause() : vars(), myWeight(0), mySat(0)
+{ }
 
 int Clause::size() const
 {
@@ -26,7 +24,7 @@ void Clause::set(int var, bool pos)
 
 void Clause::unset(int var, bool pos)
 {
-
+    // TODO: implement
 }
 
 bool Clause::get(int var, bool pos) const
@@ -66,17 +64,61 @@ int Clause::getWeight() const
     return myWeight;
 }
 
-bool Clause::isSatisfiable(const Assignment &assignment) const
+bool Clause::updateSat(const Assignment &assignment)
 {
     for(int var : vars) {
-        if(var > 0 && assignment[var - 1]) {
-            return true;
-        }
-
-        if(var < 0 && !assignment[-var - 1]) {
-            return true;
+        if((var > 0 && assignment[var - 1]) ||
+           (var < 0 && !assignment[-var - 1])) {
+            mySat = true;
+            return mySat;
         }
     }
 
-    return false;
+    mySat = false;
+    return mySat;
+}
+
+bool Clause::isSatisfiable() const
+{
+    return mySat;
+}
+
+int Clause::getScore(int flipedVar, const Assignment &assignment)
+{
+    bool newSat = false;
+    for(int var : vars) {
+        if(var - 1 == flipedVar) {
+            if(!assignment[flipedVar]) {
+                newSat = true;
+                break;
+            }
+
+            continue;
+        }
+
+        if(-var - 1 == flipedVar) {
+            if(assignment[flipedVar]) {
+                newSat = true;
+                break;
+            }
+
+            continue;
+        }
+
+        if((var > 0 && assignment[var - 1]) ||
+           (var < 0 && !assignment[-var - 1])) {
+            newSat = true;
+            break;
+        }
+    }
+
+    int score = 0;
+    if(!isSatisfiable())
+        score = getWeight();
+
+    if(!newSat) {
+        score -= getWeight();
+    }
+
+    return score;
 }

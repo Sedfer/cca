@@ -5,14 +5,14 @@
 
 struct Variable
 {
-    int value;//variable number: 0,1,2,3,4...
+    int value;  //variable number: 0,1,2,3,4...
 
-    bool assigned;//variable value: 1/0
+    std::vector<int> clauses;
     int score;
     std::set<Variable *> neighbours;
     bool confChanged;
     bool recorded;
-    int flip;
+    int age;
 
     Variable();
     Variable(int _value);

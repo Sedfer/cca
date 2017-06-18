@@ -1,11 +1,14 @@
 #include <vector>
 
 #include "assignment.h"
+
 class Clause
 {
 private:
     std::vector<int> vars;
     int myWeight;
+
+    bool mySat;
 
 public:
     Clause();
@@ -19,5 +22,8 @@ public:
     void setWeight(int weight);
     int getWeight() const;
 
-    bool isSatisfiable(const Assignment &assignment) const;
+    bool updateSat(const Assignment &assignment);
+    bool isSatisfiable() const;
+
+    int getScore(int flipedVar, const Assignment &assignment);
 };
