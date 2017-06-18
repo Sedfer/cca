@@ -19,7 +19,7 @@ void Clause::set(int var, bool pos)
 		vars.push_back(var);
 	}
 	else{
-		vars.push_back(-pos);
+		vars.push_back(-var);
 	}
 }
 void Clause::unset(int var, bool pos)
